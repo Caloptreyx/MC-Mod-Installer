@@ -1,0 +1,22 @@
+[package]
+name = "dev_caloptreyx_modinstaller"
+description = "Browse, install and manage Minecraft mods from Modrinth."
+authors = ["Caloptreyx"]
+version = "1.0.0"
+edition = { workspace = true }
+
+[dependencies]
+shared = { workspace = true }
+wings-api = { workspace = true }
+async-trait = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
+axum = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+compact_str = { workspace = true }
+regex = { workspace = true }
+tokio = { workspace = true }
+futures-util = { workspace = true }
