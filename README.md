@@ -28,7 +28,7 @@ Package name: `dev.caloptreyx.modinstaller` · Requires panel `>=1.2.2`
 ## Installation
 
 Download `dev_caloptreyx_modinstaller.c7s.zip` from the
-[latest release](https://github.com/Caloptreyx/MC-Mod-Installer-/releases/latest). Then either upload it
+[latest release](https://github.com/Caloptreyx/MC-Mod-Installer/releases/latest). Then either upload it
 under **Admin → Extensions**, or put it in your heavy image's `build/extensions/` directory and run
 `docker compose restart web`. Extensions require the `:heavy` panel image (or a dev environment); see the
 [Calagopus docs](https://calagopus.com/docs/panel/extensions/installing-extensions).
