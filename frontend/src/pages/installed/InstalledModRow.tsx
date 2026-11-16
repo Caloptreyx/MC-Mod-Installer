@@ -104,7 +104,9 @@ export default function InstalledModRow({
             type: 'action',
             icon: faArrowUpRightFromSquare,
             label: tExt('pages.server.mods.button.viewDetails', {}),
-            onClick: () => mod.project && navigate(serverModsPath(server.uuidShort, `/project/${mod.project.slug}`)),
+            onClick: () => {
+              if (mod.project) navigate(serverModsPath(server.uuidShort, `/project/${mod.project.slug}`));
+            },
             color: 'gray',
             hidden: !mod.project,
           },
