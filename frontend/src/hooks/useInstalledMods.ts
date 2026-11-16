@@ -2,10 +2,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import { useServerStore } from '@/stores/server.ts';
+import type { InstalledModFile } from '../lib/schemas.ts';
 import { getProjects, getVersionsByHashes, type ModrinthProject, type ModrinthVersion } from '../api/modrinth.ts';
 import getInstalledModFiles from '../api/server/getInstalledModFiles.ts';
 import { modInstallerQueryKey } from '../lib/constants.ts';
-import type { InstalledModFile } from '../lib/schemas.ts';
 
 export interface InstalledMod extends InstalledModFile {
   /** The Modrinth version whose file matches this file's hash, if any. */

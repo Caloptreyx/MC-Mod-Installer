@@ -74,7 +74,7 @@ run from the panel root:
 ```bash
 SQLX_OFFLINE=true cargo clippy -p dev_caloptreyx_modinstaller --all-targets
 SQLX_OFFLINE=true cargo test -p dev_caloptreyx_modinstaller
-cd frontend && ./node_modules/.bin/tsc && ./node_modules/.bin/biome check extensions/dev_caloptreyx_modinstaller/src && cd ..
+cd frontend && ./node_modules/.bin/tsc && ./node_modules/.bin/oxlint extensions/dev_caloptreyx_modinstaller && ./node_modules/.bin/oxfmt --check extensions/dev_caloptreyx_modinstaller && cd ..
 SQLX_OFFLINE=true panel-rs extensions export dev.caloptreyx.modinstaller   # -> exported-extensions/
 ```
 

@@ -1,8 +1,8 @@
 import deleteFiles from '@/api/server/files/deleteFiles.ts';
 import renameFiles from '@/api/server/files/renameFiles.ts';
 import type { ModrinthVersion } from '../api/modrinth.ts';
-import pullModFile from '../api/server/pullModFile.ts';
 import type { InstalledMod } from '../hooks/useInstalledMods.ts';
+import pullModFile from '../api/server/pullModFile.ts';
 import { DISABLED_SUFFIX, MODS_ROOT } from './constants.ts';
 import { primaryFile } from './versions.ts';
 

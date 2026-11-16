@@ -4,8 +4,8 @@ import { Skeleton } from '@mantine/core';
 import Badge from '@/elements/data-display/Badge.tsx';
 import Group from '@/elements/layout/Group.tsx';
 import Tooltip from '@/elements/overlays/Tooltip.tsx';
-import { loaderColor, loaderLabel } from '../lib/constants.ts';
 import type { DetectionSource, ServerEnvironment } from '../lib/schemas.ts';
+import { loaderColor, loaderLabel } from '../lib/constants.ts';
 import { useExtTranslations } from '../translations.ts';
 
 export default function EnvironmentBadges({

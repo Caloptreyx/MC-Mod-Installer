@@ -13,12 +13,12 @@ import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import Code from '@/elements/typography/Code.tsx';
 import Text from '@/elements/typography/Text.tsx';
 import type { ModrinthVersion, ModrinthVersionType } from '../../api/modrinth.ts';
+import type { InstalledMod } from '../../hooks/useInstalledMods.ts';
+import type { ServerEnvironment } from '../../lib/schemas.ts';
 import ChannelBadge from '../../components/ChannelBadge.tsx';
 import LoaderBadge from '../../components/LoaderBadge.tsx';
 import { useGameVersions } from '../../hooks/useGameVersions.ts';
-import type { InstalledMod } from '../../hooks/useInstalledMods.ts';
 import { loaderLabel } from '../../lib/constants.ts';
-import type { ServerEnvironment } from '../../lib/schemas.ts';
 import { formatCount, matchesFilter } from '../../lib/versions.ts';
 import { useExtTranslations } from '../../translations.ts';
 
