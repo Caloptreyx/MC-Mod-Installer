@@ -4,7 +4,7 @@ A [Calagopus Panel](https://calagopus.com) extension that makes installing and m
 easy. Browse [Modrinth](https://modrinth.com), install mods with one click and manage everything in the
 server's `mods` folder, all from the server's **Mods** page.
 
-Package name: `dev.caloptreyx.modinstaller` · Requires panel `>=1.2.2`
+Package name: `dev.caloptreyx.modinstaller` · Requires panel `>=1.2.10`
 
 ## Features
 
