@@ -25,6 +25,20 @@ Package name: `dev.caloptreyx.modinstaller` · Requires panel `>=1.2.10`
   default to the detected mod loader and Minecraft version, and a warning appears when your choice
   doesn't match the server.
 
+## Screenshots
+
+**Browse**: Modrinth mods filtered to the detected loader and Minecraft version.
+
+![Browse tab with Modrinth results](docs/screenshots/browse.png)
+
+**Install Mod modal**: loader and Minecraft version default to what was detected.
+
+![Install Mod modal](docs/screenshots/install-modal.png)
+
+**Installed**: every jar in `mods/`, identified on Modrinth, with enable switches.
+
+![Installed mods list](docs/screenshots/installed.png)
+
 ## Installation
 
 Download `dev_caloptreyx_modinstaller.c7s.zip` from the
