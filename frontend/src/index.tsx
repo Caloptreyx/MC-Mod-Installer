@@ -8,7 +8,7 @@ import { getExtTranslations } from './translations.ts';
 
 class CaloptreyxModInstallerExtension extends Extension {
   public cardConfigurationPage: React.FC | null = null;
-  public cardIcon: React.ReactNode = <FontAwesomeIcon icon={faCubes} />;
+  public cardIcon = <FontAwesomeIcon icon={faCubes} />;
 
   public initialize(ctx: ExtensionContext): void {
     ctx.extensionRegistry.enterRoutes((routes) =>
