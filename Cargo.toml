@@ -2,7 +2,7 @@
 name = "dev_caloptreyx_modinstaller"
 description = "Browse, install and manage Minecraft mods from Modrinth."
 authors = ["Caloptreyx"]
-version = "1.0.1"
+version = "1.0.2"
 edition = { workspace = true }
 
 [dependencies]
