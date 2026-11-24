@@ -37,7 +37,7 @@ import ChannelBadge from '../../components/ChannelBadge.tsx';
 import InstallModModal from '../../components/InstallModModal.tsx';
 import { modInstallerQueryKey, projectPath } from '../../lib/constants.ts';
 import { stripJarExtension } from '../../lib/files.ts';
-import { deleteMod, installVersion, setModEnabled } from '../../lib/modActions.ts';
+import { canDownload, deleteMod, installVersion, setModEnabled } from '../../lib/modActions.ts';
 import { useExtTranslations } from '../../translations.ts';
 
 /** Display name of a mod: its project title, else the file name without extensions. */
@@ -120,13 +120,15 @@ export default function InstalledModRow({
   const canSwitch = useServerCan(['files.create', 'files.delete'], false);
   const canDelete = useServerCan('files.delete');
 
-  const [openModal, setOpenModal] = useState<'switch' | 'delete' | 'update' | null>(null);
+  const [openModal, setOpenModal] = useState<'switch' | 'delete' | 'update' | 'manualUpdate' | null>(null);
   const [toggling, setToggling] = useState(false);
 
   const name = modDisplayName(mod);
   const packName =
     [pack?.name, pack?.versionName].filter(Boolean).join(' ') || tExt('pages.server.mods.pack.unnamed', {});
   const refresh = () => queryClient.invalidateQueries({ queryKey: modInstallerQueryKey('mods', server.uuid) });
+  // Updates CurseForge only offers on its website go through the install dialog's manual download.
+  const openUpdate = () => setOpenModal(mod.update && canDownload(mod.update) ? 'update' : 'manualUpdate');
 
   const doToggle = (enabled: boolean) => {
     setToggling(true);
@@ -186,7 +188,7 @@ export default function InstalledModRow({
       type: 'action' as const,
       icon: faArrowUp,
       label: mod.update ? tExt('pages.server.mods.button.update', { version: mod.update.versionNumber }) : '',
-      onClick: () => setOpenModal('update'),
+      onClick: openUpdate,
       color: 'gray' as const,
       hidden: !mod.update,
       canAccess: canSwitch,
@@ -228,7 +230,7 @@ export default function InstalledModRow({
     <>
       {mod.project && mod.source && (
         <InstallModModal
-          opened={openModal === 'switch'}
+          opened={openModal === 'switch' || openModal === 'manualUpdate'}
           onClose={() => setOpenModal(null)}
           project={{
             source: mod.source,
@@ -238,6 +240,7 @@ export default function InstalledModRow({
             iconUrl: mod.project.iconUrl,
           }}
           installed={mod}
+          initialVersionId={openModal === 'manualUpdate' ? (mod.update?.id ?? null) : null}
         />
       )}
       <ConfirmationModal
@@ -299,7 +302,7 @@ export default function InstalledModRow({
       leftSection={<FontAwesomeIcon icon={faArrowUp} />}
       onClick={(event) => {
         event.stopPropagation();
-        setOpenModal('update');
+        openUpdate();
       }}
     >
       {tExt('pages.server.mods.button.update', { version: mod.update.versionNumber })}
