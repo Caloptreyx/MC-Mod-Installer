@@ -88,7 +88,8 @@ const toVersion = (version: z.infer<typeof versionSchema>): ModVersion => ({
   id: version.id,
   projectId: version.projectId,
   name: version.name,
-  versionNumber: version.versionNumber,
+  // CurseForge's display name ("Sodium 0.6.13 (Fabric 1.21.1)") is what users know a file by.
+  versionNumber: version.name,
   channel: version.channel,
   loaders: version.loaders,
   gameVersions: version.gameVersions,

@@ -157,7 +157,11 @@ export default function ModVersionsTab({
                 <Text fw={600} truncate maw={280}>
                   {version.name}
                 </Text>
-                <Code>{version.versionNumber}</Code>
+                <Code>
+                  {version.source === 'curseforge'
+                    ? (version.file?.filename ?? version.versionNumber)
+                    : version.versionNumber}
+                </Code>
               </TableData>
               <TableData>
                 <ChannelBadge channel={version.channel} />
