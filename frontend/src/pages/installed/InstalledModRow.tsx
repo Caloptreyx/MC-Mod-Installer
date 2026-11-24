@@ -18,6 +18,7 @@ import Avatar from '@/elements/data-display/Avatar.tsx';
 import Badge from '@/elements/data-display/Badge.tsx';
 import Card from '@/elements/data-display/Card.tsx';
 import { TableData, TableRow } from '@/elements/data-display/Table.tsx';
+import Alert from '@/elements/feedback/Alert.tsx';
 import Switch from '@/elements/input/Switch.tsx';
 import Group from '@/elements/layout/Group.tsx';
 import Stack from '@/elements/layout/Stack.tsx';
@@ -148,11 +149,21 @@ export default function InstalledModRow({
       });
   };
 
+  // Failures stay in the dialog: they may name a file left behind in mods/.
+  const [failure, setFailure] = useState<string | null>(null);
+  const closeModal = () => {
+    setFailure(null);
+    setOpenModal(null);
+  };
+
   const doDelete = async () => {
+    setFailure(null);
     try {
       await deleteMod(server.uuid, mod);
       addToast(tExt('pages.server.mods.toast.deleted', { mod: name }), 'success');
-      setOpenModal(null);
+      closeModal();
+    } catch (error) {
+      setFailure(httpErrorToHuman(error));
     } finally {
       refresh();
     }
@@ -160,14 +171,23 @@ export default function InstalledModRow({
 
   const doUpdate = async () => {
     if (!mod.update) return;
+    setFailure(null);
     try {
       await installVersion(server.uuid, mod.update, { replacing: mod, existing: fileNames });
       addToast(tExt('pages.server.mods.toast.switched', { mod: name, version: mod.update.versionNumber }), 'success');
-      setOpenModal(null);
+      closeModal();
+    } catch (error) {
+      setFailure(httpErrorToHuman(error));
     } finally {
       refresh();
     }
   };
+
+  const failureAlert = failure && (
+    <Alert color='red' mt='sm'>
+      {failure}
+    </Alert>
+  );
 
   const items = [
     {
@@ -245,7 +265,7 @@ export default function InstalledModRow({
       )}
       <ConfirmationModal
         opened={openModal === 'update'}
-        onClose={() => setOpenModal(null)}
+        onClose={closeModal}
         title={tExt('pages.server.mods.installed.modal.update.title', {})}
         confirm={tExt('pages.server.mods.button.update', { version: mod.update?.versionNumber ?? '' })}
         confirmColor='blue'
@@ -259,16 +279,18 @@ export default function InstalledModRow({
           })}
         </Text>
         {packWarning}
+        {failureAlert}
       </ConfirmationModal>
       <ConfirmationModal
         opened={openModal === 'delete'}
-        onClose={() => setOpenModal(null)}
+        onClose={closeModal}
         title={tExt('pages.server.mods.installed.modal.delete.title', {})}
         confirm={tExt('pages.server.mods.button.delete', {})}
         onConfirmed={doDelete}
       >
         <Text>{tExt('pages.server.mods.installed.modal.delete.content', { mod: name, file: mod.fileName })}</Text>
         {packWarning}
+        {failureAlert}
       </ConfirmationModal>
     </>
   );

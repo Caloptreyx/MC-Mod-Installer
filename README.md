@@ -27,7 +27,8 @@ Package name: `dev.caloptreyx.modinstaller` · Requires panel `>=1.2.10`
   single `.jar` file names are written.
 - **Safe version switches**: when the new file has the same name, the old one is kept as `<name>.backup` until
   the new one is checked, and restored if anything fails. When the name differs, the old file is deleted only
-  after the new one is checked; if that delete fails you are told which file is left.
+  after the new one is checked; if that delete fails the dialog says which file is left. On nodes without a
+  trash, files are deleted permanently.
 - **CurseForge files the author only offers on CurseForge** are marked "Manual download". The extension first
   looks for the identical file on Modrinth (by SHA-1) and offers to install that. Otherwise it links to the file
   on CurseForge and lets you upload the `.jar` you downloaded: it is uploaded under a temporary name no loader
@@ -36,7 +37,8 @@ Package name: `dev.caloptreyx.modinstaller` · Requires panel `>=1.2.10`
 - **Installed mods**: every `.jar` in `mods/` is identified on Modrinth by SHA-1 and, if Modrinth doesn't know
   it, on CurseForge by fingerprint. Rows show the source, version and these problems: the same mod twice, a file
   for another loader or Minecraft version, client-only mods, missing required dependencies and installed
-  incompatible mods. Filters for updates and problems; cards instead of a table on phones.
+  incompatible mods (a jar Modrinth lists under several versions, one per loader, only counts as wrong when
+  none of them fits). Filters for updates and problems; cards instead of a table on phones.
 - **Updates**: a row offers "Update to x.y" when a newer release exists for the server's loader and Minecraft
   version (Modrinth's update endpoint, CurseForge fingerprint matches). "Update all" shows the list first and
   updates one mod at a time, waiting out the panel's download limit (5 per minute per server by default).

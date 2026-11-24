@@ -263,6 +263,8 @@ function InstallModForm({
   const [selectedDependencies, setSelectedDependencies] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Stays in the dialog: a failed step may name a file the user has to deal with.
+  const [failure, setFailure] = useState<string | null>(null);
 
   const visible = useMemo(
     () => (versions ?? []).filter((version) => showPreReleases || version.channel === 'release' || version === initial),
@@ -382,6 +384,7 @@ function InstallModForm({
 
   const run = async (install: () => Promise<void>, version: ModVersion) => {
     setSubmitting(true);
+    setFailure(null);
     const installedNames = new Set(fileNames);
     try {
       await install();
@@ -406,7 +409,7 @@ function InstallModForm({
       }
       finish(version);
     } catch (error) {
-      addToast(httpErrorToHuman(error), 'error');
+      setFailure(httpErrorToHuman(error));
       queryClient.invalidateQueries({ queryKey: modInstallerQueryKey('mods', serverUuid) });
     } finally {
       setStatus(null);
@@ -606,6 +609,11 @@ function InstallModForm({
         />
       )}
 
+      {failure && (
+        <Alert color='red' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
+          {failure}
+        </Alert>
+      )}
       {status && (
         <Text size='sm' c='dimmed'>
           {status}

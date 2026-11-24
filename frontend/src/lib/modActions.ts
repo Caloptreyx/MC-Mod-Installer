@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import { axiosInstance } from '@/api/axios.ts';
+import { axiosInstance, getHttpStatus } from '@/api/axios.ts';
 import deleteFiles from '@/api/server/files/deleteFiles.ts';
 import getFileUploadUrl from '@/api/server/files/getFileUploadUrl.ts';
 import renameFiles from '@/api/server/files/renameFiles.ts';
@@ -78,6 +78,19 @@ function expectDeleted(result: { deleted: number }, file: string) {
   if (result.deleted !== 1) throw new ModActionError(t()('pages.server.mods.errors.notDeleted', { file }));
 }
 
+/**
+ * Deletes files like the file manager does (into the trash). Nodes without a trash answer 404 for
+ * that route; they get a permanent delete instead. Returns how many files were deleted.
+ */
+async function remove(serverUuid: string, root: string, files: string[]): Promise<number> {
+  try {
+    return (await deleteFiles(serverUuid, root, files)).deleted;
+  } catch (error) {
+    if (getHttpStatus(error) !== 404) throw error;
+    return (await deleteFiles(serverUuid, root, files, true)).deleted;
+  }
+}
+
 const rename = async (serverUuid: string, from: string, to: string) =>
   expectRenamed(await renameFiles({ uuid: serverUuid, root: MODS_ROOT, files: [{ from, to }] }), from);
 
@@ -137,12 +150,12 @@ async function replaceSafely(
 
   if (replacing && replacing.fileName === target) {
     const backup = `${target}.backup`;
-    await quietly(() => deleteFiles(serverUuid, MODS_ROOT, [backup]));
+    await quietly(() => remove(serverUuid, MODS_ROOT, [backup]));
     await rename(serverUuid, target, backup);
     try {
       await place(target);
     } catch (error) {
-      await quietly(() => deleteFiles(serverUuid, MODS_ROOT, [target]));
+      await quietly(() => remove(serverUuid, MODS_ROOT, [target]));
       try {
         await rename(serverUuid, backup, target);
       } catch {
@@ -150,7 +163,7 @@ async function replaceSafely(
       }
       throw error;
     }
-    await quietly(() => deleteFiles(serverUuid, MODS_ROOT, [backup]));
+    await quietly(() => remove(serverUuid, MODS_ROOT, [backup]));
     return;
   }
 
@@ -159,7 +172,7 @@ async function replaceSafely(
   if (replacing) {
     let deleted = 0;
     try {
-      deleted = (await deleteFiles(serverUuid, MODS_ROOT, [replacing.fileName])).deleted;
+      deleted = await remove(serverUuid, MODS_ROOT, [replacing.fileName]);
     } catch {
       deleted = 0;
     }
@@ -193,7 +206,7 @@ export async function installVersion(serverUuid: string, version: ModVersion, op
     try {
       await verify(serverUuid, name, file);
     } catch (error) {
-      await quietly(() => deleteFiles(serverUuid, MODS_ROOT, [name]));
+      await quietly(() => remove(serverUuid, MODS_ROOT, [name]));
       throw error;
     }
   });
@@ -230,7 +243,7 @@ export async function installUploadedJar(
   try {
     matches = await verifyModFile(serverUuid, temporary, expected[0], expected[1]);
   } finally {
-    if (!matches) await quietly(() => deleteFiles(serverUuid, MODS_ROOT, [temporary]));
+    if (!matches) await quietly(() => remove(serverUuid, MODS_ROOT, [temporary]));
   }
   if (!matches) throw new ModActionError(t()('pages.server.mods.errors.notTheFile', {}));
 
@@ -239,7 +252,7 @@ export async function installUploadedJar(
       rename(serverUuid, temporary, name),
     );
   } catch (error) {
-    await quietly(() => deleteFiles(serverUuid, MODS_ROOT, [temporary]));
+    await quietly(() => remove(serverUuid, MODS_ROOT, [temporary]));
     throw error;
   }
 }
@@ -260,7 +273,7 @@ export async function setModEnabled(
 }
 
 export async function deleteMod(serverUuid: string, mod: ModFileRef): Promise<void> {
-  expectDeleted(await deleteFiles(serverUuid, MODS_ROOT, [mod.fileName]), mod.fileName);
+  expectDeleted({ deleted: await remove(serverUuid, MODS_ROOT, [mod.fileName]) }, mod.fileName);
 }
 
 export interface SoftwareOverride {
@@ -276,5 +289,5 @@ export async function saveOverride(serverUuid: string, value: SoftwareOverride):
 }
 
 export async function clearOverride(serverUuid: string): Promise<void> {
-  expectDeleted(await deleteFiles(serverUuid, '/', [OVERRIDE_FILE]), OVERRIDE_FILE);
+  expectDeleted({ deleted: await remove(serverUuid, '/', [OVERRIDE_FILE]) }, OVERRIDE_FILE);
 }
