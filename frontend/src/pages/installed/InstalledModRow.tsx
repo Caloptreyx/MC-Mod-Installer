@@ -403,6 +403,10 @@ export default function InstalledModRow({
                       {name}
                     </Text>
                     {subtitle}
+                    {/* File and size live here so the switch and menu fit next to the table on laptops. */}
+                    <Text size='xs' c='dimmed' truncate maw={320}>
+                      {mod.fileName} · {bytesToString(mod.size)}
+                    </Text>
                     <IssueBadges mod={mod} packName={packName} />
                   </Stack>
                 </Group>
@@ -414,14 +418,6 @@ export default function InstalledModRow({
                   {updateButton}
                 </Stack>
               </TableData>
-
-              <TableData>
-                <Text size='sm' c='dimmed' truncate maw={260}>
-                  {mod.fileName}
-                </Text>
-              </TableData>
-
-              <TableData>{bytesToString(mod.size)}</TableData>
 
               <TableData>{enabledSwitch}</TableData>
 

@@ -118,16 +118,21 @@ export default function InstalledModsPage() {
                 onChange={(event) => setSearch(event.currentTarget.value)}
                 w={narrow ? '100%' : 260}
               />
-              <SegmentedControl
-                value={status}
-                onChange={(value) => setStatus(value as StatusFilter)}
-                data={(['all', 'enabled', 'disabled', 'updates', 'issues'] as const)
-                  .filter((value) => (value !== 'updates' || updateCount > 0) && (value !== 'issues' || issueCount > 0))
-                  .map((value) => ({
-                    value,
-                    label: tExt(`pages.server.mods.installed.filter.${value}`, {}),
-                  }))}
-              />
+              {/* Scrolls sideways on phones instead of overflowing the page. */}
+              <div style={{ maxWidth: '100%', overflowX: 'auto' }}>
+                <SegmentedControl
+                  value={status}
+                  onChange={(value) => setStatus(value as StatusFilter)}
+                  data={(['all', 'enabled', 'disabled', 'updates', 'issues'] as const)
+                    .filter(
+                      (value) => (value !== 'updates' || updateCount > 0) && (value !== 'issues' || issueCount > 0),
+                    )
+                    .map((value) => ({
+                      value,
+                      label: tExt(`pages.server.mods.installed.filter.${value}`, {}),
+                    }))}
+                />
+              </div>
             </Group>
             <Group gap='sm' wrap='wrap'>
               {mods && (
@@ -193,8 +198,6 @@ export default function InstalledModsPage() {
               columns={[
                 tExt('pages.server.mods.installed.columns.mod', {}),
                 tExt('pages.server.mods.installed.columns.version', {}),
-                tExt('pages.server.mods.installed.columns.file', {}),
-                tExt('pages.server.mods.installed.columns.size', {}),
                 tExt('pages.server.mods.installed.columns.enabled', {}),
                 '',
               ]}
