@@ -8,6 +8,7 @@ import {
   getProjects,
   getProjectVersions,
   getVersionsByHashes,
+  getVersionsOfFile,
   type ModrinthProject,
 } from '../api/modrinth.ts';
 import getInstalledModFiles from '../api/server/getInstalledModFiles.ts';
@@ -20,6 +21,7 @@ import {
 } from '../lib/catalog.ts';
 import { type ModSource, modInstallerQueryKey } from '../lib/constants.ts';
 import { type IdentifiedMod, type InstalledMod, withIssues } from '../lib/issues.ts';
+import { platformMismatch } from '../lib/versions.ts';
 import { useCurseforgeStatus } from './useCurseforgeStatus.ts';
 import { useModEnvironment } from './useModEnvironment.ts';
 
@@ -27,6 +29,8 @@ export type { InstalledMod } from '../lib/issues.ts';
 
 /** Fallback lookups when Modrinth's update endpoint returns a pre-release. */
 const MAX_RELEASE_LOOKUPS = 20;
+/** Files whose other Modrinth versions are looked up before flagging a wrong loader / version. */
+const MAX_FILE_VERSION_LOOKUPS = 30;
 
 interface ModrinthIdentification {
   versions: Record<string, ModVersion>;
@@ -145,11 +149,42 @@ export function useInstalledMods() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // Modrinth often attaches the same jar to several versions (one per loader) but `version_files`
+  // returns one of them; before flagging a mismatch, look for a version of that file that fits.
+  const mismatched = useMemo(
+    () =>
+      Object.entries(installedModrinth ?? {})
+        .filter(([, version]) => {
+          const mismatch = platformMismatch(version, serverLoaders, minecraftVersion);
+          return mismatch.loader || mismatch.gameVersion;
+        })
+        .map(([hash]) => hash)
+        .slice(0, MAX_FILE_VERSION_LOOKUPS),
+    [installedModrinth, serverLoaders, minecraftVersion],
+  );
+  const fitting = useQuery({
+    queryKey: modInstallerQueryKey('fitting-versions', mismatched, serverLoaders, minecraftVersion),
+    queryFn: async () => {
+      const found: Record<string, ModVersion> = {};
+      for (const hash of mismatched) {
+        const versions = (await getVersionsOfFile(hash)).map(fromModrinthVersion);
+        const fits = versions.find((version) => {
+          const mismatch = platformMismatch(version, serverLoaders, minecraftVersion);
+          return !mismatch.loader && !mismatch.gameVersion;
+        });
+        if (fits) found[hash] = fits;
+      }
+      return found;
+    },
+    enabled: mismatched.length > 0,
+    staleTime: 10 * 60 * 1000,
+  });
+
   const mods = useMemo<InstalledMod[] | undefined>(() => {
     if (!files.data) return undefined;
 
     const identified: IdentifiedMod[] = files.data.mods.map((file) => {
-      const version = (file.sha1 && modrinth.data?.versions[file.sha1]) || null;
+      const version = (file.sha1 && (fitting.data?.[file.sha1] ?? modrinth.data?.versions[file.sha1])) || null;
       const project = version ? modrinth.data?.projects[version.projectId] : undefined;
       if (version) {
         return {
@@ -182,12 +217,13 @@ export function useInstalledMods() {
     }
 
     return withIssues(identified, {
-      serverLoaders,
-      minecraftVersion,
+      // Until every version of a mismatching file was checked, flag no loader / version problems.
+      serverLoaders: fitting.isLoading ? [] : serverLoaders,
+      minecraftVersion: fitting.isLoading ? null : minecraftVersion,
       dependencies,
       pack: files.data.pack,
     });
-  }, [files.data, modrinth.data, curseforgeMatches.data, updates.data, serverLoaders, minecraftVersion]);
+  }, [files.data, modrinth.data, fitting.data, curseforgeMatches.data, updates.data, serverLoaders, minecraftVersion]);
 
   const byProject = useMemo(
     () =>

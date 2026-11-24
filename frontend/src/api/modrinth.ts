@@ -163,6 +163,17 @@ export async function getVersion(id: string): Promise<ModrinthVersion> {
   return data;
 }
 
+/** Every version that contains the file with this SHA-1 (Modrinth reuses one jar across loader versions). */
+export async function getVersionsOfFile(sha1: string): Promise<ModrinthVersion[]> {
+  const { data } = await modrinth.get<ModrinthVersion[] | ModrinthVersion>(
+    `/version_file/${encodeURIComponent(sha1)}`,
+    {
+      params: { algorithm: 'sha1', multiple: true },
+    },
+  );
+  return Array.isArray(data) ? data : [data];
+}
+
 /** Looks up versions by the SHA-1 hash of one of their files. Unknown hashes are absent from the result. */
 export async function getVersionsByHashes(hashes: string[]): Promise<Record<string, ModrinthVersion>> {
   if (hashes.length === 0) return {};
