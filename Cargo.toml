@@ -1,16 +1,18 @@
 [package]
 name = "dev_caloptreyx_modinstaller"
-description = "Browse, install and manage Minecraft mods from Modrinth."
+description = "Browse, install and manage Minecraft mods from Modrinth and CurseForge."
 authors = ["Caloptreyx"]
-version = "1.0.2"
+version = "1.0.3"
 edition = { workspace = true }
 
 [dependencies]
 shared = { workspace = true }
 wings-api = { workspace = true }
+anyhow = { workspace = true }
 async-trait = { workspace = true }
 tracing = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 utoipa = { workspace = true }
 utoipa-axum = { workspace = true }
 axum = { workspace = true }
@@ -20,3 +22,8 @@ compact_str = { workspace = true }
 regex = { workspace = true }
 tokio = { workspace = true }
 futures-util = { workspace = true }
+garde = { workspace = true }
+indexmap = { workspace = true }
+reqwest = { workspace = true }
+# panel 1.2.10 dropped `url` from its workspace dependencies; 2.5 is in every panel's lockfile
+url = "2.5"
