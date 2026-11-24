@@ -1,17 +1,11 @@
-import type { ModrinthVersion, ModrinthVersionFile } from '../api/modrinth.ts';
+import type { ModVersion } from './catalog.ts';
 import { isModLoader } from './constants.ts';
-
-export const primaryFile = (version: ModrinthVersion): ModrinthVersionFile | undefined =>
-  version.files.find((file) => file.primary) ?? version.files[0];
-
-export const sortNewestFirst = (versions: ModrinthVersion[]): ModrinthVersion[] =>
-  [...versions].sort((a, b) => Date.parse(b.date_published) - Date.parse(a.date_published));
 
 /**
  * Loaders a mod can be installed for, in a stable order.
- * Falls back to every loader Modrinth lists when none of them is a known mod loader.
+ * Falls back to every loader listed when none of them is a known mod loader.
  */
-export function installableLoaders(versions: ModrinthVersion[]): string[] {
+export function installableLoaders(versions: ModVersion[]): string[] {
   const loaders = new Set(versions.flatMap((version) => version.loaders));
   const modLoaders = [...loaders].filter(isModLoader);
 
@@ -39,16 +33,35 @@ export function compareGameVersions(a: string, b: string, order: Map<string, num
 }
 
 export interface VersionFilter {
-  loader: string | null;
+  /** Any of these loaders; `null` or empty for all. */
+  loaders: string[] | null;
   gameVersion: string | null;
 }
 
-export const matchesFilter = (version: ModrinthVersion, { loader, gameVersion }: VersionFilter): boolean =>
-  (!loader || version.loaders.includes(loader)) && (!gameVersion || version.game_versions.includes(gameVersion));
+export const matchesFilter = (version: ModVersion, { loaders, gameVersion }: VersionFilter): boolean =>
+  (!loaders?.length || version.loaders.some((loader) => loaders.includes(loader))) &&
+  (!gameVersion || version.gameVersions.includes(gameVersion));
 
-/** The version to preselect: the newest release, else the newest pre-release. Expects newest-first input. */
-export const preferredVersion = (versions: ModrinthVersion[]): ModrinthVersion | undefined =>
-  versions.find((version) => version.version_type === 'release') ?? versions[0];
+/** The version to preselect: the newest release, else (with pre-releases allowed) the newest one. */
+export const preferredVersion = (versions: ModVersion[], includePreReleases = false): ModVersion | undefined =>
+  versions.find((version) => version.channel === 'release') ?? (includePreReleases ? versions[0] : undefined);
+
+/**
+ * Why a version doesn't fit the server: its loaders don't include one the server loads, or it
+ * doesn't list the server's Minecraft version. Unknown server values never count against it.
+ */
+export function platformMismatch(
+  version: Pick<ModVersion, 'loaders' | 'gameVersions'>,
+  serverLoaders: readonly string[],
+  minecraftVersion: string | null,
+): { loader: boolean; gameVersion: boolean } {
+  const modLoaders = version.loaders.filter(isModLoader);
+  return {
+    loader: serverLoaders.length > 0 && modLoaders.length > 0 && !modLoaders.some((l) => serverLoaders.includes(l)),
+    gameVersion:
+      !!minecraftVersion && version.gameVersions.length > 0 && !version.gameVersions.includes(minecraftVersion),
+  };
+}
 
 export const formatCount = (value: number): string =>
   new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
