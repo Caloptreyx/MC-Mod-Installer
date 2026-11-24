@@ -27,8 +27,8 @@ Package name: `dev.caloptreyx.modinstaller` · Requires panel `>=1.2.10`
   single `.jar` file names are written.
 - **Safe version switches**: when the new file has the same name, the old one is kept as `<name>.backup` until
   the new one is checked, and restored if anything fails. When the name differs, the old file is deleted only
-  after the new one is checked; if that delete fails the dialog says which file is left. On nodes without a
-  trash, files are deleted permanently.
+  after the new one is checked; if that delete fails the dialog says which file is left. Deletes go through the
+  panel like in the file manager, so the server's trash setting applies.
 - **CurseForge files the author only offers on CurseForge** are marked "Manual download". The extension first
   looks for the identical file on Modrinth (by SHA-1) and offers to install that. Otherwise it links to the file
   on CurseForge and lets you upload the `.jar` you downloaded: it is uploaded under a temporary name no loader

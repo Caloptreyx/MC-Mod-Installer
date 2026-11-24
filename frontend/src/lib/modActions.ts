@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import { axiosInstance, getHttpStatus } from '@/api/axios.ts';
+import { axiosInstance, httpErrorToHuman } from '@/api/axios.ts';
 import deleteFiles from '@/api/server/files/deleteFiles.ts';
 import getFileUploadUrl from '@/api/server/files/getFileUploadUrl.ts';
 import renameFiles from '@/api/server/files/renameFiles.ts';
@@ -78,18 +78,9 @@ function expectDeleted(result: { deleted: number }, file: string) {
   if (result.deleted !== 1) throw new ModActionError(t()('pages.server.mods.errors.notDeleted', { file }));
 }
 
-/**
- * Deletes files like the file manager does (into the trash). Nodes without a trash answer 404 for
- * that route; they get a permanent delete instead. Returns how many files were deleted.
- */
-async function remove(serverUuid: string, root: string, files: string[]): Promise<number> {
-  try {
-    return (await deleteFiles(serverUuid, root, files)).deleted;
-  } catch (error) {
-    if (getHttpStatus(error) !== 404) throw error;
-    return (await deleteFiles(serverUuid, root, files, true)).deleted;
-  }
-}
+/** Deletes files the way the file manager does (honouring the server's trash); returns how many were deleted. */
+const remove = async (serverUuid: string, root: string, files: string[]) =>
+  (await deleteFiles(serverUuid, root, files)).deleted;
 
 const rename = async (serverUuid: string, from: string, to: string) =>
   expectRenamed(await renameFiles({ uuid: serverUuid, root: MODS_ROOT, files: [{ from, to }] }), from);
@@ -237,7 +228,11 @@ export async function installUploadedJar(
   const { url } = await getFileUploadUrl(serverUuid, MODS_ROOT);
   const form = new FormData();
   form.append('files', jar, temporary);
-  await axiosInstance.post(url, form);
+  try {
+    await axiosInstance.post(url, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  } catch (error) {
+    throw new ModActionError(t()('pages.server.mods.errors.uploadFailed', { error: httpErrorToHuman(error) }));
+  }
 
   let matches = false;
   try {

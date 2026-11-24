@@ -159,6 +159,7 @@ const translations = defineTranslations({
             cannotVerify: 'CurseForge gives no hash for this file, so an upload cannot be checked.',
             notTheFile:
               "This isn't the file from CurseForge. Download the file shown on the CurseForge page and try again.",
+            uploadFailed: 'The .jar could not be uploaded: {error}',
           },
           issues: {
             short: {
@@ -243,8 +244,6 @@ const translations = defineTranslations({
             columns: {
               mod: 'Mod',
               version: 'Version',
-              file: 'File',
-              size: 'Size',
               enabled: 'Enabled',
             },
             empty: {
