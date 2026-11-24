@@ -3,7 +3,6 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod get {
     use crate::wings::{list_directory, read_file};
-    use futures_util::StreamExt;
     use serde::{Deserialize, Serialize};
     use serde_json::Value;
     use shared::{
@@ -143,31 +142,31 @@ mod get {
         ignored: &Option<Vec<compact_str::CompactString>>,
         algorithm: wings_api::Algorithm,
     ) -> HashMap<compact_str::CompactString, compact_str::CompactString> {
-        futures_util::stream::iter(paths.chunks(FINGERPRINT_CHUNK))
-            .map(|chunk| {
+        let mut hashes = HashMap::new();
+        let chunks: Vec<&[compact_str::CompactString]> = paths.chunks(FINGERPRINT_CHUNK).collect();
+        for group in chunks.chunks(CONCURRENCY) {
+            let mut calls = Vec::with_capacity(group.len());
+            for chunk in group {
                 let query = wings_api::servers_server_files_fingerprints::get::Query {
                     algorithm: Some(algorithm),
                     files: Some(chunk.to_vec()),
                     ignored: ignored.clone(),
                     ..Default::default()
                 };
-                async move {
-                    match client
+                calls.push(async move {
+                    client
                         .get_servers_server_files_fingerprints(server, &query)
                         .await
-                    {
-                        Ok(response) => response.fingerprints.into_iter().collect::<Vec<_>>(),
-                        Err(err) => {
-                            tracing::warn!(%server, "failed to fingerprint mods: {err:?}");
-                            Vec::new()
-                        }
-                    }
+                });
+            }
+            for result in futures_util::future::join_all(calls).await {
+                match result {
+                    Ok(response) => hashes.extend(response.fingerprints),
+                    Err(err) => tracing::warn!(%server, "failed to fingerprint mods: {err:?}"),
                 }
-            })
-            .buffer_unordered(CONCURRENCY)
-            .flat_map(futures_util::stream::iter)
-            .collect()
-            .await
+            }
+        }
+        hashes
     }
 
     /// The hash Wings reported for `path`, also accepting keys with a leading slash.
@@ -310,7 +309,7 @@ mod get {
                         continue;
                     }
                     let sha1 = lookup(&sha1_hashes, &path)
-                        .map(|hash| hash.to_ascii_lowercase())
+                        .map(|hash| hash.as_str().to_ascii_lowercase())
                         .filter(|hash| hash.len() == 40);
                     let fingerprint: Option<u64> = lookup(&curseforge_hashes, &path)
                         .and_then(|value| value.trim().parse().ok());
