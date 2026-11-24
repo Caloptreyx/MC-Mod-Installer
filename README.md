@@ -57,17 +57,31 @@ Package name: `dev.caloptreyx.modinstaller` · Requires panel `>=1.2.10`
 
 ## Screenshots
 
-**Browse**: Modrinth mods filtered to the detected loader and Minecraft version.
+**Browse**: Modrinth mods filtered to the detected loader and Minecraft version, with the Modrinth / CurseForge switch.
 
 ![Browse tab with Modrinth results](docs/screenshots/browse.png)
 
-**Install Mod modal**: loader and Minecraft version default to what was detected.
+**Install Mod modal**: loader and Minecraft version default to what was detected; required mods are offered too.
 
 ![Install Mod modal](docs/screenshots/install-modal.png)
 
-**Installed**: every jar in `mods/`, identified on Modrinth and CurseForge, with enable switches.
+**Installed**: every jar in `mods/`, identified on Modrinth and CurseForge, with updates, problem flags and the
+mods of the installed modpack marked.
 
 ![Installed mods list](docs/screenshots/installed.png)
+
+**Server software**: what was detected, from where, and the manual override.
+
+![Server software panel](docs/screenshots/server-software.png)
+
+**CurseForge manual download**: a file the author keeps on CurseForge is installed from its identical Modrinth copy,
+or uploaded by hand and checked against CurseForge's fingerprint.
+
+![CurseForge manual download](docs/screenshots/curseforge-manual-download.png)
+
+**Admin settings**: the optional CurseForge API key.
+
+![MC Mod Installer admin settings](docs/screenshots/admin-settings.png)
 
 ## Installation
 
