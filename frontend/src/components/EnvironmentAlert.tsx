@@ -8,10 +8,10 @@ import { useExtTranslations } from '../translations.ts';
 export default function EnvironmentAlert({ environment }: { environment: ServerEnvironment | undefined }) {
   const { t: tExt } = useExtTranslations();
 
-  if (!environment || (environment.loader && environment.minecraftVersion)) return null;
+  const hasLoader = !!environment?.software && environment.modLoaders.length > 0;
+  if (!environment || (hasLoader && environment.minecraftVersion)) return null;
 
-  const missing =
-    !environment.loader && !environment.minecraftVersion ? 'both' : environment.loader ? 'version' : 'loader';
+  const missing = !hasLoader && !environment.minecraftVersion ? 'both' : hasLoader ? 'version' : 'loader';
 
   return (
     <Alert
