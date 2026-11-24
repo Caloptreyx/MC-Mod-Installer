@@ -1,14 +1,14 @@
 import Badge from '@/elements/data-display/Badge.tsx';
-import type { ModrinthVersionType } from '../api/modrinth.ts';
+import type { Channel } from '../lib/catalog.ts';
 import { useExtTranslations } from '../translations.ts';
 
-const CHANNEL_COLORS: Record<ModrinthVersionType, string> = {
+const CHANNEL_COLORS: Record<Channel, string> = {
   release: 'green',
   beta: 'yellow',
   alpha: 'red',
 };
 
-export default function ChannelBadge({ channel }: { channel: ModrinthVersionType }) {
+export default function ChannelBadge({ channel }: { channel: Channel }) {
   const { t: tExt } = useExtTranslations();
 
   return (

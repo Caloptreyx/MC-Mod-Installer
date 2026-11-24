@@ -8,21 +8,21 @@ import Group from '@/elements/layout/Group.tsx';
 import Stack from '@/elements/layout/Stack.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import Text from '@/elements/typography/Text.tsx';
-import type { ModrinthSearchHit } from '../../api/modrinth.ts';
 import type { InstalledMod } from '../../hooks/useInstalledMods.ts';
+import type { ModSummary } from '../../lib/catalog.ts';
 import LoaderBadge from '../../components/LoaderBadge.tsx';
 import { isModLoader } from '../../lib/constants.ts';
 import { formatCount } from '../../lib/versions.ts';
 import { useExtTranslations } from '../../translations.ts';
 
 export default function ModCard({
-  hit,
+  mod,
   installed,
   canInstall,
   onOpen,
   onInstall,
 }: {
-  hit: ModrinthSearchHit;
+  mod: ModSummary;
   installed: InstalledMod | null;
   canInstall: boolean;
   onOpen: () => void;
@@ -30,23 +30,25 @@ export default function ModCard({
 }) {
   const { t: tExt } = useExtTranslations();
 
-  const loaders = hit.display_categories.filter(isModLoader);
-  const categories = hit.display_categories.filter((category) => !isModLoader(category)).slice(0, 3);
+  const loaders = [...new Set(mod.loaders.filter(isModLoader))];
+  const categories = mod.categories.filter((category) => !isModLoader(category)).slice(0, 3);
 
   return (
     <Card hoverable p='md' onClick={onOpen}>
       <Group wrap='nowrap' align='flex-start' gap='md'>
-        <Avatar src={hit.icon_url} name={hit.title} size={64} radius='md' />
+        <Avatar src={mod.iconUrl} name={mod.title} size={64} radius='md' />
 
         <Stack gap={6} style={{ flex: 1, minWidth: 0 }}>
           <Group justify='space-between' wrap='nowrap' align='flex-start'>
             <div style={{ minWidth: 0 }}>
               <Text fw={600} size='lg' truncate>
-                {hit.title}
+                {mod.title}
               </Text>
-              <Text size='xs' c='dimmed' truncate>
-                {tExt('pages.server.mods.browse.by', { author: hit.author })}
-              </Text>
+              {mod.author && (
+                <Text size='xs' c='dimmed' truncate>
+                  {tExt('pages.server.mods.browse.by', { author: mod.author })}
+                </Text>
+              )}
             </div>
             {installed && (
               <Badge color='green' variant='light' leftSection={<FontAwesomeIcon icon={faCheck} />}>
@@ -56,7 +58,7 @@ export default function ModCard({
           </Group>
 
           <Text size='sm' c='dimmed' lineClamp={2}>
-            {hit.description}
+            {mod.description}
           </Text>
 
           <Group gap={6}>
@@ -68,25 +70,32 @@ export default function ModCard({
                 {category}
               </Badge>
             ))}
+            {mod.clientOnly && (
+              <Badge variant='light' color='gray'>
+                {tExt('pages.server.mods.issues.clientOnlyShort', {})}
+              </Badge>
+            )}
           </Group>
 
           <Group justify='space-between' wrap='nowrap' mt={4}>
             <Group gap='md' c='dimmed' wrap='nowrap'>
               <Text
                 size='xs'
-                title={tExt('pages.server.mods.browse.downloads', { count: hit.downloads.toLocaleString() })}
+                title={tExt('pages.server.mods.browse.downloads', { count: mod.downloads.toLocaleString() })}
               >
-                <FontAwesomeIcon icon={faDownload} /> {formatCount(hit.downloads)}
+                <FontAwesomeIcon icon={faDownload} /> {formatCount(mod.downloads)}
               </Text>
               <Text
                 size='xs'
-                title={tExt('pages.server.mods.browse.followers', { count: hit.follows.toLocaleString() })}
+                title={tExt('pages.server.mods.browse.followers', { count: mod.follows.toLocaleString() })}
               >
-                <FontAwesomeIcon icon={faHeart} /> {formatCount(hit.follows)}
+                <FontAwesomeIcon icon={faHeart} /> {formatCount(mod.follows)}
               </Text>
-              <Text size='xs' visibleFrom='sm'>
-                {tExt('pages.server.mods.browse.updated', {})} <FormattedTimestamp timestamp={hit.date_modified} />
-              </Text>
+              {mod.updated && (
+                <Text size='xs' visibleFrom='sm'>
+                  {tExt('pages.server.mods.browse.updated', {})} <FormattedTimestamp timestamp={mod.updated} />
+                </Text>
+              )}
             </Group>
 
             {canInstall && (

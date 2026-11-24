@@ -64,6 +64,13 @@ export interface ModrinthVersionFile {
   hashes: { sha1?: string; sha512?: string };
 }
 
+export interface ModrinthDependency {
+  version_id: string | null;
+  project_id: string | null;
+  file_name: string | null;
+  dependency_type: 'required' | 'optional' | 'incompatible' | 'embedded';
+}
+
 export interface ModrinthVersion {
   id: string;
   project_id: string;
@@ -75,6 +82,7 @@ export interface ModrinthVersion {
   date_published: string;
   downloads: number;
   files: ModrinthVersionFile[];
+  dependencies?: ModrinthDependency[];
 }
 
 export interface ModrinthTeamMember {
@@ -91,7 +99,8 @@ export interface ModrinthGameVersion {
 
 export interface SearchModsOptions {
   query: string;
-  loader: string | null;
+  /** Mods for any of these loaders. */
+  loaders: string[];
   gameVersion: string | null;
   serverSideOnly: boolean;
   index: ModrinthSearchIndex;
@@ -101,7 +110,7 @@ export interface SearchModsOptions {
 
 export async function searchMods(options: SearchModsOptions): Promise<ModrinthSearchResult> {
   const facets: string[][] = [['project_type:mod']];
-  if (options.loader) facets.push([`categories:${options.loader}`]);
+  if (options.loaders.length > 0) facets.push(options.loaders.map((loader) => `categories:${loader}`));
   if (options.gameVersion) facets.push([`versions:${options.gameVersion}`]);
   if (options.serverSideOnly) facets.push(['server_side:required', 'server_side:optional']);
 
@@ -134,10 +143,23 @@ export async function getProjectMembers(idOrSlug: string): Promise<ModrinthTeamM
   return data;
 }
 
-export async function getProjectVersions(idOrSlug: string): Promise<ModrinthVersion[]> {
+/** Versions of a project, optionally only those for one of `loaders` and one of `gameVersions`. */
+export async function getProjectVersions(
+  idOrSlug: string,
+  filter: { loaders?: string[]; gameVersions?: string[] } = {},
+): Promise<ModrinthVersion[]> {
   const { data } = await modrinth.get<ModrinthVersion[]>(`/project/${encodeURIComponent(idOrSlug)}/version`, {
-    params: { include_changelog: false },
+    params: {
+      include_changelog: false,
+      loaders: filter.loaders?.length ? JSON.stringify(filter.loaders) : undefined,
+      game_versions: filter.gameVersions?.length ? JSON.stringify(filter.gameVersions) : undefined,
+    },
   });
+  return data;
+}
+
+export async function getVersion(id: string): Promise<ModrinthVersion> {
+  const { data } = await modrinth.get<ModrinthVersion>(`/version/${encodeURIComponent(id)}`);
   return data;
 }
 
@@ -148,6 +170,26 @@ export async function getVersionsByHashes(hashes: string[]): Promise<Record<stri
   const { data } = await modrinth.post<Record<string, ModrinthVersion>>('/version_files', {
     hashes,
     algorithm: 'sha1',
+  });
+  return data;
+}
+
+/**
+ * The newest version of each project (keyed by the SHA-1 of an installed file) for one of `loaders` and
+ * `gameVersions`. Modrinth does not filter by channel here, so the result may be a beta.
+ */
+export async function getLatestVersionsByHashes(
+  hashes: string[],
+  loaders: string[],
+  gameVersions: string[],
+): Promise<Record<string, ModrinthVersion>> {
+  if (hashes.length === 0) return {};
+
+  const { data } = await modrinth.post<Record<string, ModrinthVersion>>('/version_files/update', {
+    hashes,
+    algorithm: 'sha1',
+    loaders,
+    game_versions: gameVersions,
   });
   return data;
 }

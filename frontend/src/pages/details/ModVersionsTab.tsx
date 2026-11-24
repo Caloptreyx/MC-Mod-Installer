@@ -12,67 +12,64 @@ import Tooltip from '@/elements/overlays/Tooltip.tsx';
 import FormattedTimestamp from '@/elements/time/FormattedTimestamp.tsx';
 import Code from '@/elements/typography/Code.tsx';
 import Text from '@/elements/typography/Text.tsx';
-import type { ModrinthVersion, ModrinthVersionType } from '../../api/modrinth.ts';
 import type { InstalledMod } from '../../hooks/useInstalledMods.ts';
-import type { ServerEnvironment } from '../../lib/schemas.ts';
+import type { Channel, ModVersion } from '../../lib/catalog.ts';
 import ChannelBadge from '../../components/ChannelBadge.tsx';
 import LoaderBadge from '../../components/LoaderBadge.tsx';
 import { useGameVersions } from '../../hooks/useGameVersions.ts';
+import { useModEnvironment } from '../../hooks/useModEnvironment.ts';
 import { loaderLabel } from '../../lib/constants.ts';
+import { canDownload } from '../../lib/modActions.ts';
 import { formatCount, matchesFilter } from '../../lib/versions.ts';
 import { useExtTranslations } from '../../translations.ts';
 
 const PER_PAGE = 15;
 const ALL = 'all';
-const CHANNELS: ModrinthVersionType[] = ['release', 'beta', 'alpha'];
+const CHANNELS: Channel[] = ['release', 'beta', 'alpha'];
 const VISIBLE_GAME_VERSIONS = 3;
 
 export default function ModVersionsTab({
   versions,
   loading,
   error,
-  environment,
   installed,
   canInstall,
   onInstall,
 }: {
-  versions: ModrinthVersion[] | undefined;
+  versions: ModVersion[] | undefined;
   loading: boolean;
   error: string | null;
-  environment: ServerEnvironment | undefined;
   installed: InstalledMod | null;
   canInstall: boolean;
-  onInstall: (version: ModrinthVersion) => void;
+  onInstall: (version: ModVersion) => void;
 }) {
   const { t: tExt } = useExtTranslations();
   const { compare } = useGameVersions();
+  const { serverLoaders, minecraftVersion } = useModEnvironment();
 
   const loaders = useMemo(
     () => [...new Set((versions ?? []).flatMap((version) => version.loaders))].sort(),
     [versions],
   );
   const gameVersions = useMemo(
-    () => [...new Set((versions ?? []).flatMap((version) => version.game_versions))].sort(compare),
+    () => [...new Set((versions ?? []).flatMap((version) => version.gameVersions))].sort(compare),
     [versions, compare],
   );
 
   const [search, setSearch] = useState('');
   const [loader, setLoader] = useState<string | null>(null);
   const [gameVersion, setGameVersion] = useState<string | null>(null);
-  const [channel, setChannel] = useState<string>(ALL);
+  // Release versions only by default.
+  const [channel, setChannel] = useState<string>('release');
   const [page, setPage] = useState(1);
 
   // Default the filters to the detected environment when the mod supports it.
   useEffect(() => {
     if (!versions || loader !== null) return;
 
-    setLoader(environment?.loader && loaders.includes(environment.loader) ? environment.loader : ALL);
-    setGameVersion(
-      environment?.minecraftVersion && gameVersions.includes(environment.minecraftVersion)
-        ? environment.minecraftVersion
-        : ALL,
-    );
-  }, [versions, environment]);
+    setLoader(serverLoaders.find((serverLoader) => loaders.includes(serverLoader)) ?? ALL);
+    setGameVersion(minecraftVersion && gameVersions.includes(minecraftVersion) ? minecraftVersion : ALL);
+  }, [versions, serverLoaders, minecraftVersion]);
 
   useEffect(() => setPage(1), [search, loader, gameVersion, channel]);
 
@@ -80,23 +77,24 @@ export default function ModVersionsTab({
   const filtered = (versions ?? []).filter(
     (version) =>
       matchesFilter(version, {
-        loader: loader === ALL ? null : loader,
+        loaders: loader === ALL || !loader ? null : [loader],
         gameVersion: gameVersion === ALL ? null : gameVersion,
       }) &&
-      (channel === ALL || version.version_type === channel) &&
-      (!needle || version.name.toLowerCase().includes(needle) || version.version_number.toLowerCase().includes(needle)),
+      (channel === ALL || version.channel === channel) &&
+      (!needle || version.name.toLowerCase().includes(needle) || version.versionNumber.toLowerCase().includes(needle)),
   );
   const pageItems = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   return (
     <>
-      <Group mb='md' grow align='flex-end'>
+      <Group mb='md' grow align='flex-end' wrap='wrap'>
         <TextInput
           label={tExt('pages.server.mods.details.versions.search', {})}
           placeholder={tExt('pages.server.mods.details.versions.searchPlaceholder', {})}
           leftSection={<FontAwesomeIcon icon={faMagnifyingGlass} />}
           value={search}
           onChange={(event) => setSearch(event.currentTarget.value)}
+          miw={180}
         />
         <Select
           label={tExt('pages.server.mods.details.versions.loader', {})}
@@ -106,6 +104,7 @@ export default function ModVersionsTab({
           ]}
           value={loader}
           onChange={(value) => setLoader(value ?? ALL)}
+          miw={140}
         />
         <Select
           label={tExt('pages.server.mods.details.versions.gameVersion', {})}
@@ -113,6 +112,7 @@ export default function ModVersionsTab({
           value={gameVersion}
           onChange={(value) => setGameVersion(value ?? ALL)}
           searchable
+          miw={140}
         />
         <Select
           label={tExt('pages.server.mods.details.versions.channel', {})}
@@ -122,6 +122,7 @@ export default function ModVersionsTab({
           ]}
           value={channel}
           onChange={(value) => setChannel(value ?? ALL)}
+          miw={140}
         />
       </Group>
 
@@ -147,7 +148,7 @@ export default function ModVersionsTab({
       >
         {pageItems.map((version) => {
           const isInstalled = installed?.version?.id === version.id;
-          const sortedGameVersions = [...version.game_versions].sort(compare);
+          const sortedGameVersions = [...version.gameVersions].sort(compare);
           const hiddenGameVersions = sortedGameVersions.length - VISIBLE_GAME_VERSIONS;
 
           return (
@@ -156,10 +157,10 @@ export default function ModVersionsTab({
                 <Text fw={600} truncate maw={280}>
                   {version.name}
                 </Text>
-                <Code>{version.version_number}</Code>
+                <Code>{version.versionNumber}</Code>
               </TableData>
               <TableData>
-                <ChannelBadge channel={version.version_type} />
+                <ChannelBadge channel={version.channel} />
               </TableData>
               <TableData>
                 <Group gap={4} wrap='nowrap'>
@@ -179,7 +180,7 @@ export default function ModVersionsTab({
                 </Group>
               </TableData>
               <TableData>
-                <FormattedTimestamp timestamp={version.date_published} />
+                <FormattedTimestamp timestamp={version.published} />
               </TableData>
               <TableData>{formatCount(version.downloads)}</TableData>
               <TableData>
@@ -189,16 +190,23 @@ export default function ModVersionsTab({
                   </Badge>
                 ) : (
                   canInstall && (
-                    <Button
-                      size='xs'
-                      variant={installed ? 'light' : 'filled'}
-                      leftSection={<FontAwesomeIcon icon={installed ? faRightLeft : faDownload} />}
-                      onClick={() => onInstall(version)}
-                    >
-                      {installed
-                        ? tExt('pages.server.mods.button.switchVersion', {})
-                        : tExt('pages.server.mods.button.install', {})}
-                    </Button>
+                    <Group gap={6} wrap='nowrap'>
+                      {!canDownload(version) && (
+                        <Badge variant='light' color='blue'>
+                          {tExt('pages.server.mods.manualDownload', {})}
+                        </Badge>
+                      )}
+                      <Button
+                        size='xs'
+                        variant={installed ? 'light' : 'filled'}
+                        leftSection={<FontAwesomeIcon icon={installed ? faRightLeft : faDownload} />}
+                        onClick={() => onInstall(version)}
+                      >
+                        {installed
+                          ? tExt('pages.server.mods.button.switchVersion', {})
+                          : tExt('pages.server.mods.button.install', {})}
+                      </Button>
+                    </Group>
                   )
                 )}
               </TableData>
