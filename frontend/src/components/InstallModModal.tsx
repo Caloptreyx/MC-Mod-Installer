@@ -7,7 +7,7 @@ import {
   faUpload,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { FileButton } from '@mantine/core';
+import { FileButton, ScrollArea } from '@mantine/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
@@ -444,181 +444,189 @@ function InstallModForm({
 
   return (
     <Stack gap='md'>
-      <Group grow align='flex-end'>
-        <Select
-          label={tExt('pages.server.mods.installModal.loader', {})}
-          data={loaders.map((value) => ({ value, label: loaderLabel(value) }))}
-          value={loader}
-          onChange={onLoaderChange}
-          description={
-            environment?.software
-              ? tExt('pages.server.mods.installModal.detectedHint', { value: loaderLabel(environment.software.value) })
-              : undefined
-          }
-        />
-        <Select
-          label={tExt('pages.server.mods.installModal.gameVersion', {})}
-          data={gameVersionsFor(loader)}
-          value={gameVersion}
-          onChange={onGameVersionChange}
-          searchable
-          description={
-            minecraftVersion
-              ? tExt('pages.server.mods.installModal.detectedHint', { value: minecraftVersion })
-              : undefined
-          }
-        />
-      </Group>
-
-      <Select
-        label={tExt('pages.server.mods.installModal.version', {})}
-        data={matchingVersions.map((version) => ({
-          value: version.id,
-          label:
-            (version.channel === 'release'
-              ? version.versionNumber
-              : `${version.versionNumber} (${tExt(`pages.server.mods.channel.${version.channel}`, {})})`) +
-            (canDownload(version) ? '' : ` · ${tExt('pages.server.mods.manualDownload', {})}`),
-        }))}
-        value={selected?.id ?? null}
-        onChange={setVersionId}
-        searchable
-        disabled={matchingVersions.length === 0}
-      />
-      <Switch
-        label={tExt('pages.server.mods.installModal.showPreReleases', {})}
-        checked={showPreReleases}
-        onChange={(event) => setShowPreReleases(event.currentTarget.checked)}
-      />
-
-      {matchingVersions.length === 0 && (
-        <Alert color='gray' icon={<FontAwesomeIcon icon={faCircleInfo} />}>
-          {tExt('pages.server.mods.installModal.noVersions', {})}
-        </Alert>
-      )}
-
-      {selected && file && (
-        <Paper withBorder p='sm' radius='md'>
-          <Group justify='space-between' wrap='nowrap'>
-            <Stack gap={4} miw={0}>
-              <Group gap='xs'>
-                <Text fw={600}>{selected.name}</Text>
-                <ChannelBadge channel={selected.channel} />
-              </Group>
-              <Text size='sm' c='dimmed' truncate>
-                {tExt('pages.server.mods.installModal.file', {})}: <Code>{file.filename}</Code>
-              </Text>
-            </Stack>
-            <Stack gap={4} align='flex-end'>
-              <Text size='sm'>{bytesToString(file.size)}</Text>
-              <Text size='xs' c='dimmed'>
-                <FormattedTimestamp timestamp={selected.published} />
-              </Text>
-            </Stack>
+      {/* The body scrolls on its own, so it never slides under the modal title (themes may make it see-through). */}
+      <ScrollArea.Autosize mah='calc(100dvh - 16rem)' type='auto' offsetScrollbars>
+        <Stack gap='md'>
+          <Group grow align='flex-end'>
+            <Select
+              label={tExt('pages.server.mods.installModal.loader', {})}
+              data={loaders.map((value) => ({ value, label: loaderLabel(value) }))}
+              value={loader}
+              onChange={onLoaderChange}
+              description={
+                environment?.software
+                  ? tExt('pages.server.mods.installModal.detectedHint', {
+                      value: loaderLabel(environment.software.value),
+                    })
+                  : undefined
+              }
+            />
+            <Select
+              label={tExt('pages.server.mods.installModal.gameVersion', {})}
+              data={gameVersionsFor(loader)}
+              value={gameVersion}
+              onChange={onGameVersionChange}
+              searchable
+              description={
+                minecraftVersion
+                  ? tExt('pages.server.mods.installModal.detectedHint', { value: minecraftVersion })
+                  : undefined
+              }
+            />
           </Group>
-        </Paper>
-      )}
 
-      {selected && !file && (
-        <Alert color='red' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
-          {tExt('pages.server.mods.installModal.noJar', {})}
-        </Alert>
-      )}
+          <Select
+            label={tExt('pages.server.mods.installModal.version', {})}
+            data={matchingVersions.map((version) => ({
+              value: version.id,
+              label:
+                (version.channel === 'release'
+                  ? version.versionNumber
+                  : `${version.versionNumber} (${tExt(`pages.server.mods.channel.${version.channel}`, {})})`) +
+                (canDownload(version) ? '' : ` · ${tExt('pages.server.mods.manualDownload', {})}`),
+            }))}
+            value={selected?.id ?? null}
+            onChange={setVersionId}
+            searchable
+            disabled={matchingVersions.length === 0}
+          />
+          <Switch
+            label={tExt('pages.server.mods.installModal.showPreReleases', {})}
+            checked={showPreReleases}
+            onChange={(event) => setShowPreReleases(event.currentTarget.checked)}
+          />
 
-      {alreadyInstalled && (
-        <Alert color='blue' icon={<FontAwesomeIcon icon={faCircleInfo} />}>
-          {tExt('pages.server.mods.installModal.alreadyInstalled', {})}
-        </Alert>
-      )}
+          {matchingVersions.length === 0 && (
+            <Alert color='gray' icon={<FontAwesomeIcon icon={faCircleInfo} />}>
+              {tExt('pages.server.mods.installModal.noVersions', {})}
+            </Alert>
+          )}
 
-      {installed && replacing && (
-        <Alert color='blue' icon={<FontAwesomeIcon icon={faRightLeft} />}>
-          {tExt('pages.server.mods.installModal.currentVersion', {
-            version: installed.version?.versionNumber ?? installed.fileName,
-          })}
-        </Alert>
-      )}
+          {selected && file && (
+            <Paper withBorder p='sm' radius='md'>
+              <Group justify='space-between' wrap='nowrap'>
+                <Stack gap={4} miw={0}>
+                  <Group gap='xs'>
+                    <Text fw={600}>{selected.name}</Text>
+                    <ChannelBadge channel={selected.channel} />
+                  </Group>
+                  <Text size='sm' c='dimmed' truncate>
+                    {tExt('pages.server.mods.installModal.file', {})}: <Code>{file.filename}</Code>
+                  </Text>
+                </Stack>
+                <Stack gap={4} align='flex-end'>
+                  <Text size='sm'>{bytesToString(file.size)}</Text>
+                  <Text size='xs' c='dimmed'>
+                    <FormattedTimestamp timestamp={selected.published} />
+                  </Text>
+                </Stack>
+              </Group>
+            </Paper>
+          )}
 
-      {selected && mismatch?.loader && (
-        <Alert color='red' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
-          {tExt('pages.server.mods.installModal.loaderMismatch', {
-            selected: selected.loaders.filter(isModLoader).map(loaderLabel).join(', '),
-            detected: serverLoaders.map(loaderLabel).join(', '),
-          })}
-        </Alert>
-      )}
-      {selected && mismatch?.gameVersion && (
-        <Alert color='red' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
-          {tExt('pages.server.mods.installModal.gameVersionMismatch', {
-            selected: gameVersion ?? '',
-            detected: minecraftVersion ?? '',
-          })}
-        </Alert>
-      )}
-      {wrongPlatform && (
-        <Checkbox
-          label={tExt('pages.server.mods.installModal.overridePlatform', {})}
-          checked={overridePlatform}
-          onChange={(event) => setOverridePlatform(event.currentTarget.checked)}
-        />
-      )}
+          {selected && !file && (
+            <Alert color='red' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
+              {tExt('pages.server.mods.installModal.noJar', {})}
+            </Alert>
+          )}
 
-      {detectionIncomplete && (
-        <Alert color='yellow' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
-          {tExt('pages.server.mods.installModal.notDetected', {})}
-        </Alert>
-      )}
+          {alreadyInstalled && (
+            <Alert color='blue' icon={<FontAwesomeIcon icon={faCircleInfo} />}>
+              {tExt('pages.server.mods.installModal.alreadyInstalled', {})}
+            </Alert>
+          )}
 
-      {selected && (dependencies.data?.length ?? 0) > 0 && (
-        <DependencyList
-          entries={dependencies.data ?? []}
-          selected={selectedDependencies}
-          isInstalled={isInstalled}
-          onToggle={(id, checked) =>
-            setSelectedDependencies((previous) => {
-              const next = new Set(previous);
-              if (checked) next.add(id);
-              else next.delete(id);
-              return next;
-            })
-          }
-        />
-      )}
-      {dependencies.isLoading && selected && <Spinner size={16} />}
+          {installed && replacing && (
+            <Alert color='blue' icon={<FontAwesomeIcon icon={faRightLeft} />}>
+              {tExt('pages.server.mods.installModal.currentVersion', {
+                version: installed.version?.versionNumber ?? installed.fileName,
+              })}
+            </Alert>
+          )}
 
-      {needsPackConfirmation && (
-        <Checkbox
-          label={tExt('pages.server.mods.pack.confirm', {
-            mod: project.title,
-            pack:
-              [pack?.name, pack?.versionName].filter(Boolean).join(' ') || tExt('pages.server.mods.pack.unnamed', {}),
-          })}
-          checked={packConfirmed}
-          onChange={(event) => setPackConfirmed(event.currentTarget.checked)}
-        />
-      )}
+          {selected && mismatch?.loader && (
+            <Alert color='red' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
+              {tExt('pages.server.mods.installModal.loaderMismatch', {
+                selected: selected.loaders.filter(isModLoader).map(loaderLabel).join(', '),
+                detected: serverLoaders.map(loaderLabel).join(', '),
+              })}
+            </Alert>
+          )}
+          {selected && mismatch?.gameVersion && (
+            <Alert color='red' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
+              {tExt('pages.server.mods.installModal.gameVersionMismatch', {
+                selected: gameVersion ?? '',
+                detected: minecraftVersion ?? '',
+              })}
+            </Alert>
+          )}
+          {wrongPlatform && (
+            <Checkbox
+              label={tExt('pages.server.mods.installModal.overridePlatform', {})}
+              checked={overridePlatform}
+              onChange={(event) => setOverridePlatform(event.currentTarget.checked)}
+            />
+          )}
 
-      {selected && file && !canDownload(selected) && !alreadyInstalled && (
-        <ManualDownload
-          project={project}
-          version={selected}
-          busy={submitting}
-          disabled={blocked}
-          onInstallFromModrinth={doInstallCopy}
-          onUpload={doUpload}
-        />
-      )}
+          {detectionIncomplete && (
+            <Alert color='yellow' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
+              {tExt('pages.server.mods.installModal.notDetected', {})}
+            </Alert>
+          )}
 
-      {failure && (
-        <Alert color='red' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
-          {failure}
-        </Alert>
-      )}
-      {status && (
-        <Text size='sm' c='dimmed'>
-          {status}
-        </Text>
-      )}
+          {selected && (dependencies.data?.length ?? 0) > 0 && (
+            <DependencyList
+              entries={dependencies.data ?? []}
+              selected={selectedDependencies}
+              isInstalled={isInstalled}
+              onToggle={(id, checked) =>
+                setSelectedDependencies((previous) => {
+                  const next = new Set(previous);
+                  if (checked) next.add(id);
+                  else next.delete(id);
+                  return next;
+                })
+              }
+            />
+          )}
+          {dependencies.isLoading && selected && <Spinner size={16} />}
+
+          {needsPackConfirmation && (
+            <Checkbox
+              label={tExt('pages.server.mods.pack.confirm', {
+                mod: project.title,
+                pack:
+                  [pack?.name, pack?.versionName].filter(Boolean).join(' ') ||
+                  tExt('pages.server.mods.pack.unnamed', {}),
+              })}
+              checked={packConfirmed}
+              onChange={(event) => setPackConfirmed(event.currentTarget.checked)}
+            />
+          )}
+
+          {selected && file && !canDownload(selected) && !alreadyInstalled && (
+            <ManualDownload
+              project={project}
+              version={selected}
+              busy={submitting}
+              disabled={blocked}
+              onInstallFromModrinth={doInstallCopy}
+              onUpload={doUpload}
+            />
+          )}
+
+          {failure && (
+            <Alert color='red' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
+              {failure}
+            </Alert>
+          )}
+          {status && (
+            <Text size='sm' c='dimmed'>
+              {status}
+            </Text>
+          )}
+        </Stack>
+      </ScrollArea.Autosize>
 
       <ModalFooter>
         <Button

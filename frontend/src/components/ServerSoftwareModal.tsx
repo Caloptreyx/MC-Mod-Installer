@@ -1,5 +1,6 @@
 import { faEraser, faPen, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ScrollArea } from '@mantine/core';
 import { useState } from 'react';
 import { httpErrorToHuman } from '@/api/axios.ts';
 import Button from '@/elements/buttons/Button.tsx';
@@ -209,61 +210,64 @@ export default function ServerSoftwareModal({ opened, onClose }: { opened: boole
         <OverrideForm environment={environment} onDone={() => setEditing(false)} />
       ) : (
         <Stack gap='md'>
-          <Paper withBorder p='sm' radius='md'>
-            <Stack gap='xs'>
-              <FieldRow
-                label={tExt('pages.server.mods.environment.software', {})}
-                value={environment.software ? loaderLabel(environment.software.value) : null}
-                source={environment.software?.source ?? null}
-                confidence={environment.software?.confidence ?? null}
-              />
-              <FieldRow
-                label={tExt('pages.server.mods.environment.minecraftVersion', {})}
-                value={environment.minecraftVersion?.value ?? null}
-                source={environment.minecraftVersion?.source ?? null}
-                confidence={environment.minecraftVersion?.confidence ?? null}
-              />
-              <FieldRow
-                label={tExt('pages.server.mods.environment.loaderVersion', {})}
-                value={environment.loaderVersion?.value ?? null}
-                source={environment.loaderVersion?.source ?? null}
-                confidence={environment.loaderVersion?.confidence ?? null}
-              />
+          <ScrollArea.Autosize mah='calc(100dvh - 14rem)' type='auto' offsetScrollbars>
+            <Stack gap='md'>
+              <Paper withBorder p='sm' radius='md'>
+                <Stack gap='xs'>
+                  <FieldRow
+                    label={tExt('pages.server.mods.environment.software', {})}
+                    value={environment.software ? loaderLabel(environment.software.value) : null}
+                    source={environment.software?.source ?? null}
+                    confidence={environment.software?.confidence ?? null}
+                  />
+                  <FieldRow
+                    label={tExt('pages.server.mods.environment.minecraftVersion', {})}
+                    value={environment.minecraftVersion?.value ?? null}
+                    source={environment.minecraftVersion?.source ?? null}
+                    confidence={environment.minecraftVersion?.confidence ?? null}
+                  />
+                  <FieldRow
+                    label={tExt('pages.server.mods.environment.loaderVersion', {})}
+                    value={environment.loaderVersion?.value ?? null}
+                    source={environment.loaderVersion?.source ?? null}
+                    confidence={environment.loaderVersion?.confidence ?? null}
+                  />
+                </Stack>
+              </Paper>
+
+              {environment.override && environment.conflicts.length > 0 && (
+                <Alert color='yellow' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
+                  {tExt('pages.server.mods.environment.override.disagrees', {})}
+                </Alert>
+              )}
+              {!environment.override && environment.conflicts.length > 0 && (
+                <Alert color='yellow' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
+                  {tExt('pages.server.mods.environment.conflicts', {})}
+                </Alert>
+              )}
+              {environment.logStale && <Alert color='gray'>{tExt('pages.server.mods.environment.logStale', {})}</Alert>}
+
+              {environment.conflicts.length > 0 && (
+                <Stack gap='xs'>
+                  <Text fw={600}>{tExt('pages.server.mods.environment.conflictsTitle', {})}</Text>
+                  {environment.conflicts.map((evidence, index) => (
+                    <EvidenceLine key={`conflict-${index}`} evidence={evidence} />
+                  ))}
+                </Stack>
+              )}
+
+              <Stack gap='xs'>
+                <Text fw={600}>{tExt('pages.server.mods.environment.evidence', {})}</Text>
+                {environment.evidence.length === 0 ? (
+                  <Text size='sm' c='dimmed'>
+                    {tExt('pages.server.mods.environment.noEvidence', {})}
+                  </Text>
+                ) : (
+                  environment.evidence.map((evidence, index) => <EvidenceLine key={index} evidence={evidence} />)
+                )}
+              </Stack>
             </Stack>
-          </Paper>
-
-          {environment.override && environment.conflicts.length > 0 && (
-            <Alert color='yellow' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
-              {tExt('pages.server.mods.environment.override.disagrees', {})}
-            </Alert>
-          )}
-          {!environment.override && environment.conflicts.length > 0 && (
-            <Alert color='yellow' icon={<FontAwesomeIcon icon={faTriangleExclamation} />}>
-              {tExt('pages.server.mods.environment.conflicts', {})}
-            </Alert>
-          )}
-          {environment.logStale && <Alert color='gray'>{tExt('pages.server.mods.environment.logStale', {})}</Alert>}
-
-          {environment.conflicts.length > 0 && (
-            <Stack gap='xs'>
-              <Text fw={600}>{tExt('pages.server.mods.environment.conflictsTitle', {})}</Text>
-              {environment.conflicts.map((evidence, index) => (
-                <EvidenceLine key={`conflict-${index}`} evidence={evidence} />
-              ))}
-            </Stack>
-          )}
-
-          <Stack gap='xs'>
-            <Text fw={600}>{tExt('pages.server.mods.environment.evidence', {})}</Text>
-            {environment.evidence.length === 0 ? (
-              <Text size='sm' c='dimmed'>
-                {tExt('pages.server.mods.environment.noEvidence', {})}
-              </Text>
-            ) : (
-              environment.evidence.map((evidence, index) => <EvidenceLine key={index} evidence={evidence} />)
-            )}
-          </Stack>
-
+          </ScrollArea.Autosize>
           <ModalFooter>
             {canWrite && (
               <Button leftSection={<FontAwesomeIcon icon={faPen} />} onClick={() => setEditing(true)}>
